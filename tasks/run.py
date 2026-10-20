@@ -1,5 +1,5 @@
 import os
-os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
+# os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import shutil
@@ -28,6 +28,7 @@ with open('tasks/configs.yaml') as reader:
     CONFIG: dict = yaml.safe_load(reader)
 
 WORKING_DIR: str = None
+LOG_DIR: str = None
 
 @dataclass
 class TaskManager:
@@ -123,8 +124,14 @@ if __name__ == '__main__':
     parser.add_argument('--mas_type', type=str, choices=['autogen', 'macnet', 'dylan'])
     parser.add_argument('--mas_memory', type=str, default='none', help='Specify mas memory module')
     parser.add_argument('--reasoning', type=str, default='io', help='Specify reasoning module')
-    parser.add_argument('--model', type=str, default='gpt-3.5-turbo-0125', help='Specify the LLM model type')
+    parser.add_argument('--model', type=str, default='gpt-6.1-sol', help='Specify the LLM model type')
     parser.add_argument('--max_trials', type=int, default=50, help='max number of steps')
+    parser.add_argument(
+        '--limit_tasks',
+        type=int,
+        default=None,
+        help='Maximum number of tasks to execute.'
+    )
     parser.add_argument('--successful_topk', type=int, default=1, help='Number of successful trajs to be retrieved from memory.')
     parser.add_argument('--failed_topk', type=int, default=0, help='Number of failed trajs to be retrieved from memory.')
     parser.add_argument('--insights_topk', type=int, default=3, help='Number of insights to be retrieved from memory.')
@@ -149,6 +156,12 @@ if __name__ == '__main__':
     
     # run tasks
     task_configs: TaskManager = build_task(task, mas_type, mas_memory_type, max_trials)
+    # Limit tasks for smoke testing
+    if args.limit_tasks is not None:
+        if args.limit_tasks < 1:
+            parser.error("--limit_tasks must be >= 1")
+
+        task_configs.tasks = task_configs.tasks[:args.limit_tasks]
     task_configs.mas_config['successful_topk'] = args.successful_topk
     task_configs.mas_config['failed_topk'] = args.failed_topk
     task_configs.mas_config['insights_topk'] = args.insights_topk

@@ -139,17 +139,27 @@ class AutoGen(MetaMAS):
                 task_description=self.meta_memory.summarize()
             )
             tries = 0
-            
+
             while tries < 3:
-                try:  
-                    action: str = solver.response(user_prompt, self.reasoning_config)
-                    if action == '':
-                        continue
+                try:
+                    action: str = solver.response(
+                        user_prompt,
+                        self.reasoning_config
+                    )
+
+                    if not action or not action.strip():
+                        raise RuntimeError("Solver returned an empty response")
+
                     action = env.process_action(action)
                     break
+
                 except Exception as e:
-                    print(f'Error during execution of solver agent: {e}')
+                    print(f"Error during execution of solver agent: {e}")
+
                 tries += 1
+
+            if tries >= 3:
+                raise RuntimeError("Solver failed after 3 attempts")
 
             name: str = solver.name
             system_instruction = solver.system_instruction
@@ -162,16 +172,27 @@ class AutoGen(MetaMAS):
                     task_description=self.meta_memory.summarize()
                 )
                 tries = 0
+
                 while tries < 3:
-                    try: 
-                        action: str = ground_truth.response(user_prompt, self.reasoning_config)
-                        if action == '':
-                            continue
+                    try:
+                        action: str = ground_truth.response(
+                            user_prompt,
+                            self.reasoning_config
+                        )
+
+                        if not action or not action.strip():
+                            raise RuntimeError("Ground truth agent returned an empty response")
+
                         action = env.process_action(action)
                         break
+
                     except Exception as e:
-                        print(f'Error during execution of ground truth agent: {e}')
+                        print(f"Error during execution of ground truth agent: {e}")
+
                     tries += 1
+
+                if tries >= 3:
+                    raise RuntimeError("Ground truth agent failed after 3 attempts")
                 name: str = ground_truth.name
                 system_instruction = ground_truth.system_instruction
             

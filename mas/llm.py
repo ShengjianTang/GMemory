@@ -7,6 +7,19 @@ from typing import (
     List,
 )
 from openai import OpenAI
+
+from pathlib import Path
+from dotenv import load_dotenv
+
+# 获取 GMemory 项目根目录
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+# 显式加载项目根目录下的 .env
+load_dotenv(
+    dotenv_path=PROJECT_ROOT / ".env",
+    override=True
+)
+
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 
@@ -23,7 +36,7 @@ NUM_COMPS = LLM_CONFIG.get("num_comps", 1)
 URL = os.environ["OPENAI_API_BASE"]
 KEY = os.environ["OPENAI_API_KEY"]
 print('# api url: ', URL)
-print('# api key: ', KEY)
+print('# api key: ', bool(KEY))
 
 
 completion_tokens, prompt_tokens = 0, 0
@@ -67,7 +80,9 @@ class GPTChat(LLM):
         super().__init__(model_name=model_name)
         self.client = OpenAI(
             base_url=URL,
-            api_key=KEY
+            api_key=KEY,
+            timeout=90,
+            max_retries=0
         )
 
     def __call__(
